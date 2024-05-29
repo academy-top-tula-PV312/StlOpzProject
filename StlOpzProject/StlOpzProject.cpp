@@ -3,10 +3,17 @@
 
 int main()
 {
-    MathExpression math("");
-    int result;
-    if ((result = math.BracketsCheck()) == -1)
-        std::cout << "no errors\n";
-    else
-        std::cout << "error position: " << result << "\n";
+
+    MathExpression math("a + 20 * b");
+    math["a"] = 10;
+    math["b"] = 30;
+    math["a"] = 50;
+    
+    math.CreateOpz();
+    std::cout << math.ExpressionOpz() << "\n";
+
+    std::cout << "Result = " << math.CalculateOpz() << "\n";
+
+
+
 }

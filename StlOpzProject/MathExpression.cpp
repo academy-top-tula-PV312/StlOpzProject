@@ -129,13 +129,115 @@ void MathExpression::CreateOpz()
 			while (position < expression.length() &&
 				(std::isalnum(expression[position]) ||
 					expression[position] == '_'))
-				variable.push_back(expression[position]);
+				variable.push_back(expression[position++]);
 			
 			double value = variables[variable];
 			expressionOpz.append(std::to_string(value) + "#");
 			continue;
 		}
+
+		// opening brackets
+		if (bracketsOpen.find(expression[position]) != std::string::npos)
+			operationsStack.push(expression[position]);
+
+		// closing brackets
+		if (bracketsClose.find(expression[position]) != std::string::npos)
+		{
+			while (!operationsStack.empty()
+				&& bracketsOpen.find(operationsStack.top()) == std::string::npos)
+			{
+				expressionOpz.push_back(operationsStack.top());
+				operationsStack.pop();
+			}
+			operationsStack.pop();
+		}
+
+		// multiplex operations * and /
+		if (operationsMultiplex.find(expression[position]) != std::string::npos)
+		{
+			while (!operationsStack.empty()
+				&& operationsMultiplex.find(operationsStack.top()) != std::string::npos)
+			{
+				expressionOpz.push_back(operationsStack.top());
+				operationsStack.pop();
+			}
+			operationsStack.push(expression[position]);
+		}
+
+		// additive operation + and -
+		if (operationsAdditive.find(expression[position]) != std::string::npos)
+		{
+			while (!operationsStack.empty()
+				&& bracketsOpen.find(operationsStack.top()) == std::string::npos)
+			{
+				expressionOpz.push_back(operationsStack.top());
+				operationsStack.pop();
+			}
+			operationsStack.push(expression[position]);
+		}
+
+		position++;
 	}
+
+	while (!operationsStack.empty())
+	{
+		expressionOpz.push_back(operationsStack.top());
+		operationsStack.pop();
+	}
+}
+
+double MathExpression::CalculateOpz()
+{
+	std::stack<double> numbersStack;
+	int position{};
+	const std::string operators = "-+*/";
+
+	while (position < expressionOpz.length())
+	{
+
+		// numbers
+		if (std::isdigit(expressionOpz[position]) || expressionOpz[position] == '.')
+		{
+			std::string number = "";
+			while (position < expressionOpz.length() && expressionOpz[position] != '#')
+				number.push_back(expressionOpz[position++]);
+
+			numbersStack.push(std::stod(number));
+			position++;
+			continue;
+		}
+
+		// operators
+		if (operators.find(expressionOpz[position]) != std::string::npos)
+		{
+			double result{};
+			
+			double operandRight{ numbersStack.top() };
+			numbersStack.pop();
+
+			double operandLeft{ numbersStack.top() };
+			numbersStack.pop();
+
+			switch (expressionOpz[position])
+			{
+			case '+': result = operandLeft + operandRight; break;
+			case '-': result = operandLeft - operandRight; break;
+			case '*': result = operandLeft * operandRight; break;
+			case '/': result = operandLeft / operandRight; break;
+			default:
+				break;
+			}
+			numbersStack.push(result);
+		}
+		position++;
+	}
+	return numbersStack.top();
+}
+
+double MathExpression::Calculate()
+{
+	CreateOpz();
+	return CalculateOpz();
 }
 
 
