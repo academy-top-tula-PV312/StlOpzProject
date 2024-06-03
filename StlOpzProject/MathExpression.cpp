@@ -87,6 +87,9 @@ void MathExpression::CreateOpz()
 	const std::string whiteChar = " \t\n";
 
 	std::stack<char> operationsStack;
+	
+	bool isUnar{ true };
+	bool isLastOperator{ false };
 
 	while (position < expression.length())
 	{
@@ -94,6 +97,17 @@ void MathExpression::CreateOpz()
 		// ignore spaces
 		if (whiteChar.find(expression[position]) != std::string::npos)
 		{
+			position++;
+			continue;
+		}
+
+		// unar minus
+		if (expression[position] == '-' && (isUnar || isLastOperator))
+		{
+			expressionOpz += '~';
+			isUnar = false;
+			isLastOperator = false;
+
 			position++;
 			continue;
 		}
@@ -119,6 +133,11 @@ void MathExpression::CreateOpz()
 			}
 			number.push_back('#');
 			expressionOpz.append(number);
+			
+			isLastOperator = false;
+			isUnar = false;
+
+			//position++;
 			continue;
 		}
 
@@ -132,14 +151,28 @@ void MathExpression::CreateOpz()
 				variable.push_back(expression[position++]);
 			
 			double value = variables[variable];
-			expressionOpz.append(std::to_string(value) + "#");
+			if (value < 0)
+				expressionOpz.push_back('~');
+			expressionOpz.append(std::to_string(abs(value)) + "#");
+
+			isUnar = false;
+			isLastOperator = false;
+
+			//position++;
 			continue;
 		}
 
 		// opening brackets
 		if (bracketsOpen.find(expression[position]) != std::string::npos)
+		{
 			operationsStack.push(expression[position]);
+			isLastOperator = false;
+			isUnar = true;
 
+			position++;
+			continue;
+		}
+			
 		// closing brackets
 		if (bracketsClose.find(expression[position]) != std::string::npos)
 		{
@@ -150,6 +183,12 @@ void MathExpression::CreateOpz()
 				operationsStack.pop();
 			}
 			operationsStack.pop();
+
+			isLastOperator = false;
+			isUnar = false;
+
+			position++;
+			continue;
 		}
 
 		// multiplex operations * and /
@@ -162,6 +201,12 @@ void MathExpression::CreateOpz()
 				operationsStack.pop();
 			}
 			operationsStack.push(expression[position]);
+
+			isLastOperator = true;
+			isUnar = false;
+
+			position++;
+			continue;
 		}
 
 		// additive operation + and -
@@ -174,9 +219,12 @@ void MathExpression::CreateOpz()
 				operationsStack.pop();
 			}
 			operationsStack.push(expression[position]);
-		}
+			isLastOperator = true;
+			isUnar = false;
 
-		position++;
+			position++;
+			continue;
+		}
 	}
 
 	while (!operationsStack.empty())
@@ -196,13 +244,27 @@ double MathExpression::CalculateOpz()
 	{
 
 		// numbers
-		if (std::isdigit(expressionOpz[position]) || expressionOpz[position] == '.')
+		if (std::isdigit(expressionOpz[position]) 
+			|| expressionOpz[position] == '.'
+			|| expressionOpz[position] == '~')
 		{
+			int tilda{};
+			
+			while (expressionOpz[position] == '~')
+			{
+				position++;
+				tilda++;
+			}
+				
+
 			std::string number = "";
 			while (position < expressionOpz.length() && expressionOpz[position] != '#')
 				number.push_back(expressionOpz[position++]);
+			
+			double value = std::stod(number);
+			if (tilda % 2) value = -value;
 
-			numbersStack.push(std::stod(number));
+			numbersStack.push(value);
 			position++;
 			continue;
 		}

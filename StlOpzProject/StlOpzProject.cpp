@@ -4,10 +4,10 @@
 int main()
 {
 
-    MathExpression math("a + 20 * b");
+    MathExpression math("20 + cos(5)");
     math["a"] = 10;
-    math["b"] = 30;
-    math["a"] = 50;
+    math["b"] = -30;
+    math["c"] = -20;
     
     math.CreateOpz();
     std::cout << math.ExpressionOpz() << "\n";
